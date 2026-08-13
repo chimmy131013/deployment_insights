@@ -12,21 +12,39 @@ function App() {
 
   const [deployments, setDeployments] = useState([]);
 
-  const fetchData = () => {
-    fetch("http://localhost:5000/api/stats")
-      .then((response) => response.json())
-      .then((data) => setStats(data))
-      .catch((error) => console.error(error));
+  // Automatically use the current host
+  // Local:    http://localhost:5000
+  // AWS EC2:  http://YOUR_EC2_IP:5000
+  const API_URL = `http://${window.location.hostname}:5000`;
 
-    fetch("http://localhost:5000/api/deployments")
-      .then((response) => response.json())
+  const fetchData = () => {
+    // Fetch deployment statistics
+    fetch(`${API_URL}/api/stats`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to fetch statistics");
+        }
+        return response.json();
+      })
+      .then((data) => setStats(data))
+      .catch((error) => console.error("Stats error:", error));
+
+    // Fetch deployment history
+    fetch(`${API_URL}/api/deployments`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to fetch deployments");
+        }
+        return response.json();
+      })
       .then((data) => setDeployments(data))
-      .catch((error) => console.error(error));
+      .catch((error) => console.error("Deployments error:", error));
   };
 
   useEffect(() => {
     fetchData();
 
+    // Refresh dashboard every 5 seconds
     const interval = setInterval(fetchData, 5000);
 
     return () => clearInterval(interval);
@@ -35,6 +53,7 @@ function App() {
   return (
     <div className="dashboard">
 
+      {/* Header */}
       <header className="header">
         <div>
           <h1>Deployment Insights</h1>
@@ -49,6 +68,7 @@ function App() {
 
       <main>
 
+        {/* Statistics */}
         <section className="stats-grid">
 
           <div className="stat-card">
@@ -77,6 +97,7 @@ function App() {
 
         </section>
 
+        {/* Deployment Overview */}
         <section className="overview-card">
 
           <div className="section-title">
@@ -101,7 +122,9 @@ function App() {
               <div className="progress-bar">
                 <div
                   className="progress-fill"
-                  style={{ width: stats.successRate }}
+                  style={{
+                    width: stats.successRate,
+                  }}
                 ></div>
               </div>
 
@@ -111,6 +134,7 @@ function App() {
 
         </section>
 
+        {/* Recent Deployments */}
         <section className="deployments-card">
 
           <div className="section-title">
